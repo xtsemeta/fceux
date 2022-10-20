@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 late Uint8List RAM;
 var settings = FCSettings();
 
+typedef ARead = int Function(int a);
+
+List<ARead> aread = List.filled(0x10000, ((a) => 0));
+
 class FC {
   static const JOY_A = 0x01;
   static const JOY_B = 0x02;
