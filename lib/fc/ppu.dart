@@ -32,8 +32,6 @@ class BitrevLut {
   }
 }
 
-PPU ppu = PPU();
-
 class PPU {
   var ppu = Uint8List(4);
   var ppuspl = 0;
@@ -58,9 +56,9 @@ class PPU {
 
   int get status => ppu[2];
 
-  int readPalNogs(int ofs) => palram[ofs];
-  int readPal(int ofs) => palram[ofs] & (grascale > 0 ? 0x30 : 0xFF);
-  int readUPal(int ofs) => upalram[ofs] & (grascale > 0 ? 0x30 : 0xFF);
+  int _readPalNogs(int ofs) => palram[ofs];
+  int _readPal(int ofs) => palram[ofs] & (grascale > 0 ? 0x30 : 0xFF);
+  int _readUPal(int ofs) => upalram[ofs] & (grascale > 0 ? 0x30 : 0xFF);
 
   var ppulut1 = Uint32List(256),
       ppulut2 = Uint32List(256),
@@ -506,15 +504,3 @@ class STRIPE_READ {
 }
 
 enum PPUPHASE { VBL, BG, OBJ }
-
-void reset() {}
-void power() {}
-void loop() {}
-
-void refreshLine(int l) {}
-
-void setVideoSystem(int w) {}
-
-void saveState() {}
-void loadState(int version) {}
-void peekAddress() {}

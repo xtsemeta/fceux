@@ -7,16 +7,21 @@ typedef ARead = int Function(int a);
 
 List<ARead> aread = List.filled(0x10000, ((a) => 0));
 
-class FC {
-  static const JOY_A = 0x01;
-  static const JOY_B = 0x02;
-  static const JOY_SELECT = 0x04;
-  static const JOY_START = 0x08;
-  static const JOY_UP = 0x10;
-  static const JOY_DOWN = 0x20;
-  static const JOY_LEFT = 0x40;
-  static const JOY_RIGHT = 0x80;
+enum JoyInput {
+  a(val: 0x01),
+  b(val: 0x02),
+  select(val: 0x04),
+  start(val: 0x08),
+  up(val: 0x10),
+  down(val: 0x20),
+  left(val: 0x40),
+  right(val: 0x80);
 
+  final int val;
+  const JoyInput({required this.val});
+}
+
+class FC {
   /// x6502
   int main(List<String> arguments) {
     if (!initialise()) {
