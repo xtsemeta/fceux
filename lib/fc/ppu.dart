@@ -355,6 +355,8 @@ class PPU {
       return ppuGenLatch;
     }
   }
+
+  void refreshLine(int lastpixel) {}
 }
 
 //使用内部寄存器概念http://nesdev.icequake.net/PPU%20addressing.txt

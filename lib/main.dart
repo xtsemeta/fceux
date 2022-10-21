@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -62,7 +63,24 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  void dirInit() async {
+    var dir;
+    // dir = await getApplicationDocumentsDirectory();
+    // print("docs=${dir.path}");
+    // dir = await getApplicationSupportDirectory();
+    // print("support=${dir.path}");
+    // dir = await getApplicationDocumentsDirectory();
+    // print("temp=${dir.path}");
+  }
+
+  @override
   Widget build(BuildContext context) {
+    dirInit();
+
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
