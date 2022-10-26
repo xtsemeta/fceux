@@ -1,3 +1,4 @@
+import 'package:fc_flutter/fc/file.dart';
 import 'package:flutter/foundation.dart';
 
 late Uint8List RAM;
@@ -22,6 +23,10 @@ enum JoyInput {
 }
 
 class FC {
+  var PAL = 0;
+  var dendy = 0;
+  var loadedRomPatchFile = "";
+
   /// x6502
   int main(List<String> arguments) {
     if (!initialise()) {
@@ -58,6 +63,19 @@ class FC {
   void ppuInit() {}
 
   void exit() {}
+
+  void loadGame(String path) {
+    int lastpal = PAL;
+    int lastdendy = dendy;
+
+    var romextensions = ['nes', 'fds', 'nsf'];
+    FCFILE? file = FCFILE.open(path, loadedRomPatchFile, romextensions);
+
+    if (file == null) {
+      throw Exception('error opening $path');
+      return;
+    }
+  }
 }
 
 class FCSettings {

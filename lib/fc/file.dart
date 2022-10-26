@@ -37,8 +37,7 @@ class FCFILE {
 
   void close() {}
 
-  static FCFILE? open(String path, String? ipsfn, String? ext, int index,
-      List<String>? extensions, List<int>? userCancel) {
+  static FCFILE? open(String path, String? ipsfn, List<String>? extensions) {
     File ipsfp = File(ipsfn ?? "");
     FCFILE? fcfp;
     var files = splitArchiveFilename(path);
