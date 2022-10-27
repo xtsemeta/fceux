@@ -1,9 +1,12 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:fc_flutter/fc/emufile.dart';
+import 'package:archive/archive_io.dart';
+import 'package:path/path.dart';
 
-class FCFILE {
-  EMUFILE? stream;
+class FCFile {
+  EmuFile? stream;
   String? filename;
   String? logicalPath;
   String? archiveFilename;
@@ -14,7 +17,7 @@ class FCFILE {
 
   bool isArchive() => archiveCount > 0;
 
-  void setStream(EMUFILE newstream) {
+  void setStream(EmuFile newstream) {
     stream = newstream;
   }
 
@@ -37,17 +40,49 @@ class FCFILE {
 
   void close() {}
 
-  static FCFILE? open(String path, String? ipsfn, List<String>? extensions) {
+  static const support_exts = ['nes', 'fds', 'nsf'];
+
+  static Future<FCFile?> open(String path, String? ipsfn,
+      {List<String> extensions = support_exts}) async {
     File ipsfp = File(ipsfn ?? "");
-    FCFILE? fcfp;
+    FCFile fcfp;
     var files = splitArchiveFilename(path);
     var archive = files[0];
     var fname = files[1];
     var fileToOpen = files[2];
 
-    if (ipsfp.existsSync()) fcfp?.applyIps(ipsfp.absolute.path);
+    final inputStream = InputFileStream(fileToOpen);
+    final decArchive = ZipDecoder().decodeBuffer(inputStream);
 
-    return null;
+    ArchiveFile? af;
+    EmuFileMemory em = EmuFileMemory();
+    for (var item in decArchive.files) {
+      if (!item.isFile) continue;
+      var ext = extension(item.name);
+      if (extensions.contains(ext)) {
+        af = item;
+        em.data = item.content as List<int>;
+        em.len = em.data.length;
+        break;
+      }
+    }
+    if (af == null) return null;
+
+    fcfp = FCFile();
+    fcfp.filename = fileToOpen;
+    fcfp.logicalPath = fileToOpen;
+    fcfp.fullFilename = fileToOpen;
+    fcfp.stream = em;
+    fcfp.size = em.len;
+
+    if (!ipsfp.existsSync()) {
+      var ipsFilename = "$fileToOpen.ips";
+      ipsfp = File(ipsFilename);
+    }
+
+    fcfp?.applyIps(ipsfp.absolute.path);
+
+    return fcfp;
   }
 }
 

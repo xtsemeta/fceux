@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:io';
 
-class EMUFILE {
+class EmuFile {
   bool _failbit = false;
 
   bool fail({bool unset = false}) {
@@ -19,11 +19,11 @@ class EMUFILE {
   }
 }
 
-class EMUFILE_FILE with EMUFILE {
+class EmuFileFile with EmuFile {
   File? file;
   String? fname;
 
-  EMUFILE_FILE(String this.fname) {
+  EmuFileFile(String this.fname) {
     _open(fname!);
   }
 
@@ -33,8 +33,8 @@ class EMUFILE_FILE with EMUFILE {
   }
 }
 
-class EMUFILE_MEMORY with EMUFILE {
-  List<Uint8> vec = List.empty();
+class EmuFileMemory with EmuFile {
+  List<int> data = List.empty();
   bool ownvec = false;
   int pos = 0;
   int len = 0;

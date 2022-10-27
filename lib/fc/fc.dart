@@ -5,7 +5,6 @@ late Uint8List RAM;
 var settings = FCSettings();
 
 typedef ARead = int Function(int a);
-
 List<ARead> aread = List.filled(0x10000, ((a) => 0));
 
 enum JoyInput {
@@ -33,7 +32,6 @@ class FC {
       exit();
       return 1;
     }
-
     return 0;
   }
 
@@ -64,16 +62,14 @@ class FC {
 
   void exit() {}
 
-  void loadGame(String path) {
+  void loadGame(String path) async {
     int lastpal = PAL;
     int lastdendy = dendy;
 
-    var romextensions = ['nes', 'fds', 'nsf'];
-    FCFILE? file = FCFILE.open(path, loadedRomPatchFile, romextensions);
+    FCFile? file = await FCFile.open(path, loadedRomPatchFile);
 
     if (file == null) {
       throw Exception('error opening $path');
-      return;
     }
   }
 }
