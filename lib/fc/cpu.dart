@@ -9,45 +9,53 @@ typedef ARead = int Function(int address);
 typedef BWrite = void Function(int address, int value);
 
 class CpuRegister {
+  /// 加速器
   var a = 0;
+
+  /// 索引寄存器
   var x = 0;
+
+  /// 索引寄存器
   var y = 0;
 
+  /// 状态寄存器的每一位都用作分支指令中的标志。第5位不使用，始终设置为1。<br/><pre>
+  ///         7 6 5 4 3 2 1 0<br/>
+  /// 状态标志 N V 1 B D I Z C</pre>
   var p = 0;
+
+  ///程序计数器
   var pc = 0;
+
+  ///堆栈指针
   var sp = 0;
 
-  static const FLAG_N = 0x80;
-  static const FLAG_V = 0x40;
-  static const FLAG_U = 0x20;
-  static const FLAG_B = 0x10;
-  static const FLAG_D = 0x08;
-  static const FLAG_I = 0x04;
-  static const FLAG_Z = 0x02;
-  static const FLAG_C = 0x01;
+  /// negative，该位就是运算结果的最高位
+  final FLAG_N = 0x80;
 
-  late int Function(int a) rdmem;
+  /// overflow，进位标志（一般对于有符号数来说），上溢1，下溢0
+  final FLAG_V = 0x40;
 
-  void test() {
-    rdmem = (a) {
-      return a + 10;
-    };
-    var a = rdmem(10);
-  }
+  /// reserved (always 1)
+  final FLAG_U = 0x20;
+
+  /// break，发出IRQ中断
+  final FLAG_B = 0x10;
+
+  /// decimal，BCD模式
+  final FLAG_D = 0x08;
+
+  /// interrupt disable，1使得系统忽略中断
+  final FLAG_I = 0x04;
+
+  /// zero，最近一条指令结果是否为0，1是、0不是
+  final FLAG_Z = 0x02;
+
+  /// carry，进位标志（一般对于无符号数来说），上溢1，下溢0
+  final FLAG_C = 0x01;
 }
 
-class X6502 {
+class X6502 with CpuRegister {
   var tcount = 0; //临时循环计数器
-
-  var A = 0; //加速器
-  var X = 0; //索引寄存器
-  var Y = 0; //索引寄存器
-  var PC = 0; //程序计数器
-  var SP = 0; //堆栈指针
-  /// 状态寄存器的每一位都用作分支指令中的标志。第5位不使用，始终设置为1。
-  ///          7 6 5 4 3 2 1 0
-  /// 状态标志  N V 1 B D I Z C
-  var P = 0; //处理器状态寄存器
 
   var mooPI = 0;
   var jammed = 0;
@@ -62,15 +70,6 @@ class X6502 {
   var scanline = 0;
 
   var isPal = false;
-
-  static const N_FLAG = 0x80; // negative，该位就是运算结果的最高位
-  static const V_FLAG = 0x40; // overflow，进位标志（一般对于有符号数来说），上溢1，下溢0
-  static const U_FLAG = 0x20; // reserved (always 1)
-  static const B_FLAG = 0x10; // break，发出IRQ中断
-  static const D_FLAG = 0x08; // decimal，BCD模式
-  static const I_FLAG = 0x04; // interrupt disable，1使得系统忽略中断
-  static const Z_FLAG = 0x02; // zero，最近一条指令结果是否为0，1是、0不是
-  static const C_FLAG = 0x01; // carry，进位标志（一般对于无符号数来说），上溢1，下溢0
 
   static const dendy = false;
   static const NTSC_CPU = dendy ? 1773447.467 : 1789772.7272727272727272;
@@ -99,9 +98,9 @@ class X6502 {
   void init() {
     for (var i = 0; i < 256; i++) {
       if (i == 0)
-        ZNTable[i] = Z_FLAG;
+        ZNTable[i] = FLAG_Z;
       else if (i & 0x80 > 0)
-        ZNTable[i] = N_FLAG;
+        ZNTable[i] = FLAG_N;
       else
         ZNTable[i] = 0;
     }
@@ -119,16 +118,16 @@ class X6502 {
     count = 0;
     tcount = 0;
     IRQlow = 0;
-    PC = 0;
-    A = 0;
-    X = 0;
-    Y = 0;
-    P = 0;
+    pc = 0;
+    a = 0;
+    x = 0;
+    y = 0;
+    p = 0;
     mooPI = 0;
     DB = 0;
     jammed = 0;
 
-    SP = 0xFD;
+    sp = 0xFD;
     timestamp = soundtimestamp = 0;
     reset();
     stackAddrBackup = -1;
@@ -169,207 +168,299 @@ class X6502 {
   ]);
 
   /// 常用算法定义
-  void _addcyc(int x) {
-    X = x;
+  void addcyc(int x) {
+    this.x = x;
     tcount = x;
     count = x * 48;
-    timestamp += X;
+    timestamp += this.x;
     if (!overclocking) {
       soundtimestamp += x;
     }
   }
 
-  int rdMem(int a) {
+  int rdmem(int a) {
     DB = aread[a](a);
     return DB;
   }
 
-  void wrMem(int a, int v) {
+  void wrmem(int a, int v) {
     bwrite[a](a, v);
   }
 
-  int rdRam(int a) {
+  int rdram(int a) {
     return DB = aread[a](a);
     // return DB = RAM(a);
   }
 
-  void wrRam(int a, int v) {
+  void wrram(int a, int v) {
     RAM[a] = v;
   }
 
-  int _dmr(int a) {
-    _addcyc(1);
+  int dmr(int a) {
+    addcyc(1);
     return DB = aread[a](a);
   }
 
-  void _dmw(int a, int v) {
-    _addcyc(1);
+  void dmw(int a, int v) {
+    addcyc(1);
     bwrite[a](a, v);
   }
 
-  void _push(int v) {
-    wrRam(0x100 + SP, v);
-    SP--;
+  void push(int v) {
+    wrram(0x100 + sp, v);
+    sp--;
   }
 
-  _pop() => rdRam(0x100 + (++SP));
+  pop() => rdram(0x100 + (++sp));
 
-  _xZN(int zort) {
-    P &= ~(Z_FLAG | N_FLAG);
-    P |= ZNTable[zort];
+  zn(int zort) {
+    p &= ~(FLAG_Z | FLAG_N);
+    p |= ZNTable[zort];
   }
 
-  _xZNT(int zort) {
-    P |= ZNTable[zort];
+  znt(int zort) {
+    p |= ZNTable[zort];
   }
 
-  _jr(bool cond) {
+  jr(bool cond) {
     if (cond) {
-      var disp = rdMem(PC);
-      PC++;
-      _addcyc(1);
-      var tmp = PC;
-      PC += disp;
-      if (tmp ^ PC & 0x100 != 0) _addcyc(1);
+      var disp = rdmem(pc);
+      pc++;
+      addcyc(1);
+      var tmp = pc;
+      pc += disp;
+      if (tmp ^ pc & 0x100 != 0) addcyc(1);
     } else {
-      PC++;
+      pc++;
     }
   }
 
-  void _lda(int x) {
-    A = x;
-    _xZN(A);
+  void lda(int x) {
+    a = x;
+    zn(a);
   }
 
-  _ldx(int x) {
-    X = x;
-    _xZN(X);
+  ldx(int x) {
+    this.x = x;
+    zn(this.x);
   }
 
-  _ldy(int x) {
-    Y = x;
-    _xZN(Y);
+  ldy(int x) {
+    y = x;
+    zn(y);
   }
 
   //算术操作
   //绝对寻址，指令中操作数部分为 操作数的绝对地址
-  _and(x) {
-    A &= x;
-    _xZN(A);
+  and(x) {
+    a &= x;
+    zn(a);
   }
 
-  _eor(x) {
-    A ^= x;
-    _xZN(A);
+  eor(x) {
+    a ^= x;
+    zn(a);
   }
 
-  _ora(x) {
-    A |= x;
-    _xZN(A);
+  ora(x) {
+    a |= x;
+    zn(a);
   }
 
-  _bit(x) {
-    P &= (Z_FLAG | V_FLAG | N_FLAG);
-    P |= ZNTable[x & A] & Z_FLAG;
-    P |= x & (V_FLAG | N_FLAG);
+  bit(x) {
+    p &= (FLAG_Z | FLAG_V | FLAG_N);
+    p |= ZNTable[x & a] & FLAG_Z;
+    p |= x & (FLAG_V | FLAG_N);
   }
 
-  _adc(int x) {
-    var l = A + x + (P & 1);
-    P &= ~(Z_FLAG | C_FLAG | N_FLAG | V_FLAG);
-    P |= ((((A ^ x) & 0x80) ^ 0x80) & ((A ^ l) & 0x80)) >> 1;
-    P |= (l >> 8) & C_FLAG;
-    A = l;
-    _xZNT(A);
+  adc(int x) {
+    var l = a + x + (p & 1);
+    p &= ~(FLAG_Z | FLAG_C | FLAG_N | FLAG_V);
+    p |= ((((a ^ x) & 0x80) ^ 0x80) & ((a ^ l) & 0x80)) >> 1;
+    p |= (l >> 8) & FLAG_C;
+    a = l;
+    znt(a);
   }
 
-  _sbc(int x) {
-    var l = A - x - ((P & 1) ^ 1);
-    P &= ~(Z_FLAG | C_FLAG | N_FLAG | V_FLAG);
-    P |= ((A ^ l) & (A ^ x) & 0x80) >> 1;
-    P |= ((l >> 8) & C_FLAG) ^ C_FLAG;
-    A = l;
-    _xZNT(A);
+  sbc(int x) {
+    var l = a - x - ((p & 1) ^ 1);
+    p &= ~(FLAG_Z | FLAG_C | FLAG_N | FLAG_V);
+    p |= ((a ^ l) & (a ^ x) & 0x80) >> 1;
+    p |= ((l >> 8) & FLAG_C) ^ FLAG_C;
+    a = l;
+    znt(a);
   }
 
-  _cmpl(a1, a2) {
+  cmpl(a1, a2) {
     var t = a1 - a2;
-    _xZN(t & 0xFF);
-    P &= ~C_FLAG;
-    P |= ((t >> 8) & C_FLAG) ^ C_FLAG;
+    zn(t & 0xFF);
+    p &= ~FLAG_C;
+    p |= ((t >> 8) & FLAG_C) ^ FLAG_C;
   }
 
-  _axs(int x) {
-    var t = (A & X) - x;
-    _xZN(t & 0xFF);
-    P &= ~C_FLAG;
-    P |= ((t >> 8) & C_FLAG) ^ C_FLAG;
-    X = t;
+  axs(int x) {
+    var t = (a & this.x) - x;
+    zn(t & 0xFF);
+    p &= ~FLAG_C;
+    p |= ((t >> 8) & FLAG_C) ^ FLAG_C;
+    this.x = t;
   }
 
-  _cmp(int x) => _cmpl(A, x);
-  _cpx(int x) => _cmpl(X, x);
-  _cpy(int x) => _cmpl(Y, x);
+  cmp(int x) => cmpl(this.a, x);
+  cpx(int x) => cmpl(this.x, x);
+  cpy(int x) => cmpl(this.y, x);
 
-  _dec(x) {
+  dec(x) {
     x--;
-    _xZN(x);
+    zn(x);
   }
 
-  _inc(x) {
+  inc(x) {
     x++;
-    _xZN(x);
+    zn(x);
   }
 
-  _asl(x) {
-    PC &= ~C_FLAG;
-    P |= x >> 7;
+  asl(x) {
+    pc &= ~FLAG_C;
+    p |= x >> 7;
     x <<= 1;
-    _xZN(x);
+    zn(x);
   }
 
-  _lsr(x) {
-    PC &= ~(C_FLAG | N_FLAG | Z_FLAG);
-    P |= x & 1;
+  lsr(x) {
+    pc &= ~(FLAG_C | FLAG_N | FLAG_Z);
+    p |= x & 1;
     x >>= 1;
-    _xZN(x);
+    zn(x);
   }
 
-  _lsra(x) {
-    P &= ~(C_FLAG | N_FLAG | Z_FLAG);
-    P |= A & 1;
-    A >>= 1;
-    _xZNT(A);
+  lsra(x) {
+    p &= ~(FLAG_C | FLAG_N | FLAG_Z);
+    p |= a & 1;
+    a >>= 1;
+    znt(a);
   }
 
-  _rol(x) {
+  rol(x) {
     var l = x >> 7;
-    x |= P & C_FLAG;
-    P &= ~(Z_FLAG | N_FLAG | C_FLAG);
-    P |= l;
-    _xZNT(x);
+    x |= p & FLAG_C;
+    p &= ~(FLAG_Z | FLAG_N | FLAG_C);
+    p |= l;
+    znt(x);
   }
 
-  _ror(x) {
+  ror(x) {
     var l = x & 1;
     x >>= 1;
-    x |= (P & C_FLAG) << 7;
-    P &= ~(Z_FLAG | N_FLAG | C_FLAG);
-    P |= l;
-    _xZNT(x);
+    x |= (p & FLAG_C) << 7;
+    p &= ~(FLAG_Z | FLAG_N | FLAG_C);
+    p |= l;
+    znt(x);
+  }
+
+  /// Absolute
+  getAB() {
+    var target = rdmem(pc);
+    pc++;
+    target |= rdmem(pc) << 8;
+    pc++;
+    return target;
+  }
+// Absolute Indexed(for reads) 
+  getABIRD(int i) {
+    var tmp = 0, target = 0;
+    tmp = getAB();
+    target = tmp;
+    target += i;
+    if ((target ^ tmp) & 0x100 != 0) {
+      target &= 0xFFFF;
+      addcyc(1);
+    }
+    return target;
+  }
+// Absolute Indexed(for writes and rmws)
+  getABIWR(int i) {
+    var rt = 0, target = 0;
+    rt = getAB();
+    target = rt;
+    target += i;
+    target &= 0xFFFF;
+    rdmem((target & 0x00FF) | (rt & 0xFF00));
+    return target;
+  }
+// Zero Page
+  getZP() {
+    var target = 0;
+    target = rdmem(pc);
+    pc++;
+    return target;
+  }
+// Zero Page Indexed
+  getZPI(int i) {
+    var target = i + rdmem(pc);
+    pc++;
+  }
+///Indexed Indirect
+  getIX() {
+    var target = 0, tmp = 0;
+    tmp = rdmem(pc);
+    pc++;
+    tmp += x;
+    target = rdram(tmp);
+    tmp++;
+    target |= rdram(tmp) << 8;
+    return target;
+  }
+///Indirect Indexed(for reads)
+  getIYRD() {
+    var target = 0, tmp = 0, rt = 0;
+    tmp = rdmem(pc);
+    pc++;
+    rt = rdram(tmp);
+    tmp++;
+    rt |= rdram(tmp) << 8;
+    target = rt;
+    target += y;
+    if ((target ^ rt) & 0x100 != 0) {
+      target &= 0xFFFF;
+      rdmem(target ^ 0x100);
+      addcyc(1);
+    }
+    return target;
+  }
+
+///Indirect Indexed(for writes and rmws)
+  getIYWR() {
+    var target = 0, tmp = 0, rt = 0;
+    tmp = rdmem(pc);
+    pc++;
+    rt = rdram(tmp);
+    tmp++;
+    rt |= rdram(tmp) << 8;
+    target = rt;
+    target += y;
+    target &= 0xFFFF;
+    rdmem((target ^ 0x00FF) | (rt & 0xFF00));
+    return target;
+  }
+
+  rmwA(op) {
+    var x = a;
+    a=op(x);
+    break;
   }
 
   ops(op) {
     switch (op) {
       case 0x00: //BRK
-        PC++;
-        _push(PC >> 8);
-        _push(PC);
-        _push(P | U_FLAG | B_FLAG);
-        P |= I_FLAG;
-        mooPI |= I_FLAG;
-        PC = rdMem(0xFFFE);
-        PC = rdMem(0xFFFF) << 8;
+        pc++;
+        push(pc >> 8);
+        push(pc);
+        push(p | FLAG_U | FLAG_B);
+        p |= FLAG_I;
+        mooPI |= FLAG_I;
+        pc = rdmem(0xFFFE);
+        pc = rdmem(0xFFFF) << 8;
         break;
       default:
     }
