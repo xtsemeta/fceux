@@ -80,7 +80,7 @@ class FCFile {
       ipsfp = File(ipsFilename);
     }
 
-    fcfp?.applyIps(ipsfp.absolute.path);
+    fcfp.applyIps(ipsfp.absolute.path);
 
     return fcfp;
   }

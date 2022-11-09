@@ -1,4 +1,5 @@
 import 'package:fc_flutter/fc/file.dart';
+import 'package:fc_flutter/fc/git.dart';
 import 'package:flutter/foundation.dart';
 
 late Uint8List RAM;
@@ -25,6 +26,8 @@ class FC {
   var PAL = 0;
   var dendy = 0;
   var loadedRomPatchFile = "";
+
+  late FCGI gameInfo;
 
   /// x6502
   int main(List<String> arguments) {
@@ -71,7 +74,27 @@ class FC {
     if (file == null) {
       throw Exception('error opening $path');
     }
+
+    resetGameLoaded();
+
+    closeGame();
+
+    gameInfo = FCGI();
+    gameInfo.filename = file.filename!;
+    gameInfo.soundchan = 0;
+    gameInfo.soundrate = 0;
+    gameInfo.name = "";
+    gameInfo.type = EGIT.GIT_CART;
+    gameInfo.vidsys = EGIV.GIV_USER;
+    gameInfo.input[0] = gameInfo.input[1] = ESI.SI_UNSET;
+    gameInfo.inputfc = ESIFC.SIFC_UNSET;
+    gameInfo.cspecial = ESIS.SIS_NONE;
   }
+
+  void resetGameLoaded() {}
+  void closeGame() {}
+
+  void xload(FCFile file) {}
 }
 
 class FCSettings {
