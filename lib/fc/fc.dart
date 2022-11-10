@@ -1,6 +1,8 @@
 import 'package:fc_flutter/fc/file.dart';
 import 'package:fc_flutter/fc/git.dart';
+import 'package:fc_flutter/fc/ines.dart';
 import 'package:flutter/foundation.dart';
+import 'package:collection/collection.dart';
 
 late Uint8List RAM;
 var settings = FCSettings();
@@ -94,7 +96,29 @@ class FC {
   void resetGameLoaded() {}
   void closeGame() {}
 
-  void xload(FCFile file) {}
+  void xload(FCFile file) {
+    if (file.stream == null) return;
+    var bytes = file.stream!.read(16);
+    INesHeader head = INesHeader();
+    head.id = bytes.sublist(0, 4);
+    head.romSize = bytes[4];
+    head.vromSize = bytes[5];
+    head.romType = bytes[6];
+    head.romType2 = bytes[7];
+    head.romType3 = bytes[8];
+    head.upperRomVromSize = bytes[9];
+    head.ramSize = bytes[10];
+    head.vramSize = bytes[11];
+    head.vsHardware = bytes[12];
+    head.reserved = bytes.sublist(13, 15);
+
+    if (!head.id.equals("NES\x1a".codeUnits)) {
+      return;
+    }
+
+    int mapper = head.romType >> 4;
+    mapper |= head.romType2 & 0xF0;
+  }
 }
 
 class FCSettings {

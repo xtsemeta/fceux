@@ -2,7 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 class INesHeader {
-  var id = List.filled(4, 0); //0-3
+  var id = Uint8List(4); //0-3
   var romSize = 0; //4
   var vromSize = 0; //5
   var romType = 0; //6
@@ -13,5 +13,5 @@ class INesHeader {
   var vramSize = 0; //11
   var tvSystem = 0; //12
   var vsHardware = 0; //13
-  var reserved = List.filled(2, 0); //14,15
+  var reserved = Uint8List(2); //14,15
 }

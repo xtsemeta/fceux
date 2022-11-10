@@ -8,11 +8,9 @@ import 'package:path/path.dart';
 class FCFile {
   EmuFile? stream;
   String? filename;
-  String? logicalPath;
-  String? archiveFilename;
-  String? fullFilename;
+  String? path;
+  String? dir;
   int archiveCount = -1;
-  int archiveIndex = 0;
   int size = 0;
 
   bool isArchive() => archiveCount > 0;
@@ -40,43 +38,55 @@ class FCFile {
 
   void close() {}
 
-  static const support_exts = ['nes', 'fds', 'nsf'];
+  static const supportExts = ['nes', 'fds', 'nsf'];
 
   static Future<FCFile?> open(String path, String? ipsfn,
-      {List<String> extensions = support_exts}) async {
+      {List<String> extensions = supportExts}) async {
     File ipsfp = File(ipsfn ?? "");
-    FCFile fcfp;
-    var files = splitArchiveFilename(path);
-    var archive = files[0];
-    var fname = files[1];
-    var fileToOpen = files[2];
+    FCFile fcfp = FCFile();
+    var ext = extension(path);
+    var filename = basename(path);
+    var dir = dirname(path);
+    fcfp.path = path;
+    fcfp.filename = filename;
+    fcfp.dir = dir;
+    var file = File(path);
+    if (!(await file.exists())) {
+      return null;
+    }
 
-    final inputStream = InputFileStream(fileToOpen);
-    final decArchive = ZipDecoder().decodeBuffer(inputStream);
-
-    ArchiveFile? af;
-    EmuFileMemory em = EmuFileMemory();
-    for (var item in decArchive.files) {
-      if (!item.isFile) continue;
-      var ext = extension(item.name);
-      if (extensions.contains(ext)) {
-        af = item;
-        em.data = item.content as List<int>;
-        em.len = em.data.length;
-        break;
+    InputFileStream iStream;
+    if (supportExts.contains(ext)) {
+      var bytes = await file.readAsBytes();
+      EmuFileMemory em = EmuFileMemory();
+      em.data = bytes;
+      em.len = bytes.length;
+      fcfp.stream = em;
+      fcfp.size = em.len;
+    } else {
+      final inputStream = InputFileStream(path);
+      Archive decArchive = ZipDecoder().decodeBuffer(inputStream);
+      try {
+        ArchiveFile? af;
+        EmuFileMemory em = EmuFileMemory();
+        for (var item in decArchive.files) {
+          fcfp.archiveCount++;
+          if (!item.isFile) continue;
+          var ext = extension(item.name);
+          if (!extensions.contains(ext)) continue;
+          af = item;
+          em.data = item.rawContent?.toUint8List();
+          em.len = em.data?.length ?? 0;
+          break;
+        }
+        if (af == null) return null;
+      } catch (e) {
+        print('file can not decoded');
       }
     }
-    if (af == null) return null;
 
-    fcfp = FCFile();
-    fcfp.filename = fileToOpen;
-    fcfp.logicalPath = fileToOpen;
-    fcfp.fullFilename = fileToOpen;
-    fcfp.stream = em;
-    fcfp.size = em.len;
-
-    if (!ipsfp.existsSync()) {
-      var ipsFilename = "$fileToOpen.ips";
+    if (!(await ipsfp.exists())) {
+      var ipsFilename = "${withoutExtension(path)}.ips";
       ipsfp = File(ipsFilename);
     }
 
