@@ -10,6 +10,7 @@ class FCFile {
   String? filename;
   String? path;
   String? dir;
+
   int archiveCount = -1;
   int size = 0;
 
@@ -38,11 +39,10 @@ class FCFile {
 
   void close() {}
 
-  static const supportExts = ['nes', 'fds', 'nsf'];
+  static const supportExts = ['.nes', '.fds', '.nsf'];
 
-  static Future<FCFile?> open(String path, String? ipsfn,
-      {List<String> extensions = supportExts}) async {
-    File ipsfp = File(ipsfn ?? "");
+  static Future<FCFile?> open(String path,
+      {String? ipsfn = "", List<String> extensions = supportExts}) async {
     FCFile fcfp = FCFile();
     var ext = extension(path);
     var filename = basename(path);
@@ -55,7 +55,6 @@ class FCFile {
       return null;
     }
 
-    InputFileStream iStream;
     if (supportExts.contains(ext)) {
       var bytes = await file.readAsBytes();
       EmuFileMemory em = EmuFileMemory();
@@ -81,32 +80,18 @@ class FCFile {
         }
         if (af == null) return null;
       } catch (e) {
+        // ignore: avoid_print
         print('file can not decoded');
       }
     }
 
-    if (!(await ipsfp.exists())) {
-      var ipsFilename = "${withoutExtension(path)}.ips";
-      ipsfp = File(ipsFilename);
+    var ipsPath = ipsfn;
+    if (ipsPath == null || ipsPath.isEmpty) {
+      ipsPath = "${withoutExtension(path)}.ips";
     }
 
-    fcfp.applyIps(ipsfp.absolute.path);
+    fcfp.applyIps(ipsPath);
 
     return fcfp;
   }
-}
-
-class ArchvieScanRecord {
-  var type = -1;
-  var numFilesInArchive = 0;
-
-  List<FCArchvieFileInfo> files = [];
-
-  bool get isArchive => type != -1;
-}
-
-class FCArchvieFileInfo {
-  var name = "";
-  var size = 0;
-  var index = 0;
 }

@@ -1,6 +1,8 @@
+import 'package:fc_flutter/fc/cart.dart';
 import 'package:fc_flutter/fc/file.dart';
 import 'package:fc_flutter/fc/git.dart';
 import 'package:fc_flutter/fc/ines.dart';
+import 'package:fc_flutter/fc/ppu.dart';
 import 'package:flutter/foundation.dart';
 import 'package:collection/collection.dart';
 
@@ -29,7 +31,9 @@ class FC {
   var dendy = 0;
   var loadedRomPatchFile = "";
 
+  late PPU ppu;
   late FCGI gameInfo;
+  late XCart cart;
 
   /// x6502
   int main(List<String> arguments) {
@@ -71,7 +75,7 @@ class FC {
     int lastpal = PAL;
     int lastdendy = dendy;
 
-    FCFile? file = await FCFile.open(path, loadedRomPatchFile);
+    FCFile? file = await FCFile.open(path, ipsfn: loadedRomPatchFile);
 
     if (file == null) {
       throw Exception('error opening $path');
@@ -91,14 +95,33 @@ class FC {
     gameInfo.input[0] = gameInfo.input[1] = ESI.SI_UNSET;
     gameInfo.inputfc = ESIFC.SIFC_UNSET;
     gameInfo.cspecial = ESIS.SIS_NONE;
+
+    _load(file);
   }
 
   void resetGameLoaded() {}
   void closeGame() {}
 
-  void xload(FCFile file) {
+  bool inesLoad() {
+    return false;
+  }
+
+  bool nsfLoad() {
+    return false;
+  }
+
+  bool unifLoad() {
+    return false;
+  }
+
+  bool fdsLoad() {
+    return false;
+  }
+
+  void _load(FCFile file) {
     if (file.stream == null) return;
-    var bytes = file.stream!.read(16);
+    var stream = file.stream!;
+    var bytes = stream.read(16);
     INesHeader head = INesHeader();
     head.id = bytes.sublist(0, 4);
     head.romSize = bytes[4];
@@ -118,6 +141,31 @@ class FC {
 
     int mapper = head.romType >> 4;
     mapper |= head.romType2 & 0xF0;
+
+    cart = NROM(ppu);
+    cart.prgPages = head.romSize;
+    if (cart.prgPages == 0) {
+      print("received zero prgpages");
+      cart.prgPages = 256;
+    }
+    cart.chrPages = head.vromSize;
+
+    cart.mirroring = head.romType & 1;
+    if (head.romType & 8 != 0) cart.mirroring = 2;
+
+// skip trainer
+    var hasTrainer = (head.romType & 4) != 0;
+    if (hasTrainer) file.stream?.seek(512);
+
+    // load data
+    cart.prgSize = cart.prgPages * 16 * 1024;
+    cart.chrSize = cart.chrPages * 8 * 1024;
+    cart.prg = Uint8List(cart.prgSize);
+    cart.chr = Uint8List(cart.chrSize);
+    bytes = stream.read(cart.prgSize);
+    cart.prg.setAll(0, bytes);
+    bytes = stream.read(cart.chrSize);
+    cart.chr.setAll(0, bytes);
   }
 }
 

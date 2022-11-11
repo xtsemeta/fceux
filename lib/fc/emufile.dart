@@ -5,6 +5,11 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 
 class EmuFile {
+  Uint8List? data;
+  bool ownvec = false;
+  int pos = 0;
+  int len = 0;
+
   bool _failbit = false;
 
   bool fail({bool unset = false}) {
@@ -22,31 +27,6 @@ class EmuFile {
     var bytes = await file.readAsBytes();
     return bytes;
   }
-
-  Uint8List read(int size) {
-    return Uint8List(size);
-  }
-}
-
-class EmuFileFile with EmuFile {
-  File? file;
-  String? fname;
-
-  EmuFileFile(String this.fname) {
-    _open(fname!);
-  }
-
-  void _open(String fname) {
-    file = File(fname);
-    this.fname = fname;
-  }
-}
-
-class EmuFileMemory with EmuFile {
-  Uint8List? data;
-  bool ownvec = false;
-  int pos = 0;
-  int len = 0;
 
   @override
   Uint8List read(int size) {
@@ -72,4 +52,43 @@ class EmuFileMemory with EmuFile {
     len = length;
     if (pos > length) pos = length;
   }
+
+  static const SEEK_SET = 0;
+  static const SEEK_CUR = 1;
+  static const SEEK_END = 2;
+  seek(int offset, {int origin = SEEK_CUR}) {
+    switch (origin) {
+      case SEEK_SET:
+        pos = offset;
+        break;
+      case SEEK_CUR:
+        pos += offset;
+        break;
+      case SEEK_END:
+        pos = size() + offset;
+        break;
+    }
+    reserve(pos);
+  }
+
+  void reserve(int size) {
+    // 跟resize唯一不同的区别是，声明的内存空间大于size的部分不清空
+    data ??= Uint8List(size);
+
+    if (data!.length < size) {
+      data!.addAll(Uint8List(size - data!.length));
+    }
+  }
+
+  void resize(int size) {
+    data ??= Uint8List(size);
+
+    if (data!.length < size) {
+      data!.addAll(Uint8List(size - data!.length));
+    } else {
+      data = data!.sublist(0, size);
+    }
+  }
 }
+
+class EmuFileMemory with EmuFile {}

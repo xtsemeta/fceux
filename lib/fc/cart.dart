@@ -26,7 +26,7 @@ class XCart {
   int mirroring = 0;
   int chrPages = 0, prgPages = 0;
   int chrSize = 0, prgSize = 0;
-  Uint8List? chr = null, prg = null;
+  late Uint8List chr, prg;
 
   void power() {}
 }
