@@ -27,12 +27,16 @@ enum JoyInput {
 }
 
 class FC {
-  var PAL = 0;
+  var pal = 0;
   var dendy = 0;
   var loadedRomPatchFile = "";
 
+  var autoResumePlay = false;
+  var disableAutoLSCheats = false;
+  var disableBatteryLoading = false;
+
   late PPU ppu;
-  late FCGI gameInfo;
+  FCGI? gameInfo;
   late XCart cart;
 
   /// x6502
@@ -71,8 +75,8 @@ class FC {
 
   void exit() {}
 
-  void loadGame(String path) async {
-    int lastpal = PAL;
+  Future<FCGI?> loadGame(String path, {bool overwriteVidMode = false}) async {
+    int lastpal = pal;
     int lastdendy = dendy;
 
     FCFile? file = await FCFile.open(path, ipsfn: loadedRomPatchFile);
@@ -86,17 +90,89 @@ class FC {
     closeGame();
 
     gameInfo = FCGI();
-    gameInfo.filename = file.filename!;
-    gameInfo.soundchan = 0;
-    gameInfo.soundrate = 0;
-    gameInfo.name = "";
-    gameInfo.type = EGIT.GIT_CART;
-    gameInfo.vidsys = EGIV.GIV_USER;
-    gameInfo.input[0] = gameInfo.input[1] = ESI.SI_UNSET;
-    gameInfo.inputfc = ESIFC.SIFC_UNSET;
-    gameInfo.cspecial = ESIS.SIS_NONE;
+    gameInfo!.filename = file.filename!;
+    gameInfo!.soundchan = 0;
+    gameInfo!.soundrate = 0;
+    gameInfo!.name = "";
+    gameInfo!.type = EGIT.GIT_CART;
+    gameInfo!.vidsys = EGIV.GIV_USER;
+    gameInfo!.input[0] = gameInfo!.input[1] = ESI.SI_UNSET;
+    gameInfo!.inputfc = ESIFC.SIFC_UNSET;
+    gameInfo!.cspecial = ESIS.SIS_NONE;
 
     _load(file);
+
+    bool loadSucess = false;
+    loadSucess = inesLoad();
+    if (!loadSucess) {
+      loadSucess = nsfLoad();
+      if (!loadSucess) {
+        loadSucess = unifLoad();
+        if (!loadSucess) {
+          loadSucess = fdsLoad();
+        }
+      }
+    }
+
+    if (loadSucess) {
+      if (overwriteVidMode) {
+        resetVidSys();
+      }
+
+      if (gameInfo!.type != EGIT.GIT_NSF && settings.gameGenie && openGenie()) {
+        setGameGenie(false);
+      }
+
+      powerNes();
+
+      if (gameInfo!.type != EGIT.GIT_NSF) {
+        loadGamePalette();
+      }
+      resetPalette();
+
+      if (lastpal == 0 && pal != 0) {
+        print('PAL mode set');
+      } else if (lastdendy == 0 && dendy != 0) {
+        print('Dendy mode set');
+      } else if ((lastpal != 0 || lastdendy != 0) &&
+          !(pal != 0 || dendy != 0)) {
+        print('NTSC mode set');
+      }
+
+      if (gameInfo!.type != EGIT.GIT_NSF && !disableAutoLSCheats) {
+        loadGameCheats('');
+      }
+      if (autoResumePlay) {
+        if (ssLoad(path)) {
+          print('old play session resumed.');
+        }
+      }
+
+      // resetScreenshotsCounter();
+    } else {
+      return null;
+    }
+    return gameInfo;
+  }
+
+  void resetVidSys() {}
+  openGenie() {}
+  void setGameGenie(bool enable) {}
+  void powerNes() {
+    if (gameInfo == null) {
+      return;
+    }
+  }
+
+  void loadGamePalette() {}
+  resetPalette() {}
+  resetMessage() {}
+  void loadGameCheats(String path, {bool override = true}) {
+    if (path.isEmpty) return;
+  }
+
+  bool ssLoad(String path) {
+    return false;
   }
 
   void resetGameLoaded() {}
@@ -118,8 +194,8 @@ class FC {
     return false;
   }
 
-  void _load(FCFile file) {
-    if (file.stream == null) return;
+  bool _load(FCFile file) {
+    if (file.stream == null) return false;
     var stream = file.stream!;
     var bytes = stream.read(16);
     INesHeader head = INesHeader();
@@ -136,7 +212,7 @@ class FC {
     head.reserved = bytes.sublist(13, 15);
 
     if (!head.id.equals("NES\x1a".codeUnits)) {
-      return;
+      return false;
     }
 
     int mapper = head.romType >> 4;
@@ -166,7 +242,17 @@ class FC {
     cart.prg.setAll(0, bytes);
     bytes = stream.read(cart.chrSize);
     cart.chr.setAll(0, bytes);
+
+    // setup the emulator
+    resetCartMapping();
+    setupCartPrgMapping();
+    setupCartChrMapping();
+    return true;
   }
+
+  void resetCartMapping() {}
+  void setupCartPrgMapping() {}
+  void setupCartChrMapping() {}
 }
 
 class FCSettings {
