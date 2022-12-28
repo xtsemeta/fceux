@@ -1111,13 +1111,13 @@ class X6502 with CpuRegister {
         break;
 
       case 0x85:
-        stZP(this.a);
+        stZP(a);
         break;
       case 0x95:
-        stZPX(this.a);
+        stZPX(a);
         break;
       case 0x8D:
-        stAB(this.a);
+        stAB(a);
         break;
       case 0x9D:
         stABX(this.a);
