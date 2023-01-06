@@ -47,6 +47,9 @@ dependencies:
   badges: ^2.0.3
   banner_carousel: ^1.2.1
 
+  nes:
+    path: ./emulator/nes
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

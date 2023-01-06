@@ -1,0 +1,16 @@
+enum AddressingMode {
+  unused,
+  modeAbsolute,
+  modeabsolutex,
+  modeabsolutey,
+  modeaccumulator,
+  modeImemdiate,
+  modeImplied,
+  modeIndexedIndirect,
+  modeIndirect,
+  modeIndirectIndexed,
+  modeRelative,
+  modeZeroPage,
+  modeZeroPageX,
+  modeZeroPageY,
+}
