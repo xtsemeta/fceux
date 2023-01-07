@@ -1,6 +1,9 @@
 import 'package:nes/cartridge.dart';
+import 'package:nes/mapper2.dart';
+import 'package:nes/mmc1.dart';
 
 import 'cpu.dart';
+import 'mmc3.dart';
 
 abstract class Mapper {
   late CPU cpu;
@@ -9,8 +12,15 @@ abstract class Mapper {
   void step();
 
   static Mapper newMapper(
-      Cartridge cartridge, MapperStepCallback stepCallback) {
-    if (cartridge.mapper == 0) {}
+      Cartridge cartridge, MapperStepCallback? stepCallback) {
+    switch (cartridge.mapper) {
+      case 0:
+        return Mapper2(cartridge, stepCallback);
+      case 1:
+        return MMC1(cartridge, stepCallback: stepCallback);
+      case 4:
+        return MMC3(cartridge, stepCallback: stepCallback);
+    }
     throw Exception('Mapper ${cartridge.mapper} not implemented');
   }
 }

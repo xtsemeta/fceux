@@ -10,7 +10,7 @@ class Controller {
   }
 
   void onButtonDown(Buttons button) {
-    buttons[button.index] = false;
+    buttons[button.index] = true;
   }
 
   int read() {

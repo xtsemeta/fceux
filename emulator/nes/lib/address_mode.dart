@@ -1,9 +1,9 @@
 enum AddressingMode {
   unused,
   modeAbsolute,
-  modeabsolutex,
-  modeabsolutey,
-  modeaccumulator,
+  modeAbsoluteX,
+  modeAbsoluteY,
+  modeAccumulator,
   modeImemdiate,
   modeImplied,
   modeIndexedIndirect,

@@ -3,7 +3,7 @@ import 'package:nes/mapper.dart';
 
 class Mapper2 with Mapper {
   Cartridge cartridge;
-  MapperStepCallback stepCallback;
+  MapperStepCallback? stepCallback;
 
   late int prgBanks;
   late int prgBank1 = 0;
