@@ -1,10 +1,10 @@
-import 'package:nes/apu.dart';
-import 'package:nes/controller.dart';
-import 'package:nes/cpu.dart';
-import 'package:nes/mapper.dart';
-import 'package:nes/mapper2.dart';
-import 'package:nes/mmc3.dart';
-import 'package:nes/ppu.dart';
+import 'apu.dart';
+import 'controller.dart';
+import 'cpu.dart';
+import 'mapper.dart';
+import 'mapper2.dart';
+import 'mmc3.dart';
+import 'ppu.dart';
 
 import 'cartridge.dart';
 import 'mmc1.dart';

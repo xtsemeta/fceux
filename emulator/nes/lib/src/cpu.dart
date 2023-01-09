@@ -1,4 +1,4 @@
-import 'package:nes/ppu.dart';
+import 'ppu.dart';
 
 import 'address_mode.dart';
 import 'apu.dart';

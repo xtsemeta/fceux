@@ -1,5 +1,5 @@
-import 'package:nes/cartridge.dart';
-import 'package:nes/mapper.dart';
+import 'cartridge.dart';
+import 'mapper.dart';
 
 class Mapper2 with Mapper {
   Cartridge cartridge;

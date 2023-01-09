@@ -1,8 +1,8 @@
 import 'dart:ffi';
 
 import 'package:flutter/services.dart';
-import 'package:nes/cartridge.dart';
-import 'package:nes/ines_file_header.dart';
+import 'cartridge.dart';
+import 'ines_file_header.dart';
 
 import 'byte_array_input_stream.dart';
 
@@ -11,7 +11,7 @@ class INesFileParser {
   static const inesFileMagic = [0xe4, 0x45, 0x53, 0x1a];
   static const padding = [0, 0, 0, 0, 0, 0, 0];
 
-  INesFileHeader? parseFileHeader(ByteArrayInputStream stream) {
+  static INesFileHeader? parseFileHeader(ByteArrayInputStream stream) {
     return INesFileHeader(
         Uint8List.fromList(List.generate(4, (index) => stream.read())),
         stream.read() as Uint8,
@@ -22,7 +22,7 @@ class INesFileParser {
         Uint8List.fromList(List.generate(7, (index) => stream.read())));
   }
 
-  Cartridge parseCartridge(ByteArrayInputStream stream) {
+  static Cartridge parseCartridge(ByteArrayInputStream stream) {
     var inesFileHeader = parseFileHeader(stream);
     if (inesFileHeader == null || !inesFileHeader.isValid) {
       throw Exception('Invalid INES file header');

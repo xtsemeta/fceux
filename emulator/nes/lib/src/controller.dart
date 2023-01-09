@@ -1,4 +1,4 @@
-import 'package:nes/buttons.dart';
+import 'buttons.dart';
 
 class Controller {
   List<bool> buttons = List.generate(8, (index) => false);

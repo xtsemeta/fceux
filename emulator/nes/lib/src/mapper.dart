@@ -1,6 +1,6 @@
-import 'package:nes/cartridge.dart';
-import 'package:nes/mapper2.dart';
-import 'package:nes/mmc1.dart';
+import 'cartridge.dart';
+import 'mapper2.dart';
+import 'mmc1.dart';
 
 import 'cpu.dart';
 import 'mmc3.dart';

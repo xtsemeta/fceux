@@ -1,7 +1,7 @@
 import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
-import 'package:nes/ines_file_parser.dart';
+import 'ines_file_parser.dart';
 
 class INesFileHeader {
   Uint8List magic;

@@ -1,4 +1,4 @@
-import 'package:nes/mmc3.dart';
+import 'mmc3.dart';
 
 import 'cartridge.dart';
 import 'mapper.dart';

@@ -4,7 +4,7 @@ enum AddressingMode {
   modeAbsoluteX,
   modeAbsoluteY,
   modeAccumulator,
-  modeImemdiate,
+  modeImmediate,
   modeImplied,
   modeIndexedIndirect,
   modeIndirect,
