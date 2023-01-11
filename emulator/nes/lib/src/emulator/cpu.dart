@@ -334,7 +334,7 @@ class CPU {
       case 30:
         {
           // asl
-          if (stepMode == AddressingMode.modeAccumulator) {
+          if (stepMode == AddressingMode.modeAccumulator.index) {
             C = (A >> 7) & 1;
             A = A << 1 & 0xFF;
             setZN(A);
@@ -1091,6 +1091,7 @@ class CPU {
     I = 1;
   }
 
+  /// 1.789773 MHz
   static const int frequencyHZ = 1789773; // 1.789773 MHz;
   /**
         6, 7, 6, 7, 11, 11, 11, 11, 6, 5, 4, 5, 1, 1, 1, 1,

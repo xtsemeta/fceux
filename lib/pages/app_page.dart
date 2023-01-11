@@ -25,7 +25,7 @@ class _AppPageState extends State<AppPage> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       onGenerateRoute: Application.router.generator,
-      initialRoute: '/',
+      initialRoute: '/emulator/nes',
     );
     return app;
   }
