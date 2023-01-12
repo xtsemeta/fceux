@@ -1,27 +1,27 @@
-import 'dart:ffi';
-
 import 'package:flutter/foundation.dart';
+
 import 'ines_file_parser.dart';
+import 'package:collection/collection.dart';
 
 class INesFileHeader {
-  Uint8List magic;
-  Uint8 numPRG;
-  Uint8 numCHR;
-  Uint8 control1;
-  Uint8 control2;
-  Uint8 numRAM;
-  Uint8List padding;
+  List<int> magic;
+  int numPRG;
+  int numCHR;
+  int control1;
+  int control2;
+  int numRAM;
+  List<int> padding;
   INesFileHeader(this.magic, this.numPRG, this.numCHR, this.control1,
       this.control2, this.numRAM, this.padding);
 
   @override
   int get hashCode {
     var result = magic.hashCode;
-    result = 31 * result + (numPRG as int);
-    result = 31 * result + (numCHR as int);
-    result = 31 * result + (control1 as int);
-    result = 31 * result + (control2 as int);
-    result = 31 * result + (numRAM as int);
+    result = 31 * result + (numPRG);
+    result = 31 * result + (numCHR);
+    result = 31 * result + (control1);
+    result = 31 * result + (control2);
+    result = 31 * result + (numRAM);
     result = 31 * result + padding.hashCode;
     return result;
   }
@@ -43,7 +43,5 @@ class INesFileHeader {
     return super == other;
   }
 
-  bool get isValid =>
-      (magic == INesFileParser.inesFileMagic) &&
-      (padding == INesFileParser.padding);
+  bool get isValid => listEquals(magic, INesFileParser.inesFileMagic);
 }

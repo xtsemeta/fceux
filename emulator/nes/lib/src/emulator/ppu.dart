@@ -95,7 +95,7 @@ class PPU {
   late int mirror = cartridge.mirror;
 
   late CPU cpu;
-  late Mapper mapper;
+  Mapper? mapper;
   bool isMMC3 = false;
   bool isNoOpMapper = false;
 
@@ -598,46 +598,44 @@ class PPU {
   int read(int addr) /* Byte */ {
     var address = addr % 0x4000;
     if (address < 0x2000) {
-      return mapper.read(address);
-    }
-    if (address < 0x3F00) {
+      return mapper?.read(address) ?? 0;
+    } else if (address < 0x3F00) {
       // mirror address
       var newAddress = (address - 0x2000) % 0x1000;
       var mirrorAddr = 0x2000 +
           mirrorLookup[mirror][newAddress ~/ 0x0400] * 0x0400 +
           (newAddress % 0x0400);
       return nameTableData[mirrorAddr % 2048];
-    }
-    if (address < 0x4000) {
+    } else if (address < 0x4000) {
       var paletteAddress = address % 32;
       var data = paletteData[(paletteAddress >= 16 && paletteAddress % 4 == 0)
           ? paletteAddress - 16
           : paletteAddress];
       return data;
+    } else {
+      throw Exception("unhandled PPU memory read at address: $address");
     }
-    throw Exception("unhandled PPU memory read at address: $address");
   }
 
   write(int addr, int value /* Byte */) {
     var address = addr % 0x4000;
     if (address < 0x2000) {
-      mapper.write(address, value);
-    }
-    if (address < 0x3F00) {
+      mapper?.write(address, value);
+    } else if (address < 0x3F00) {
       // mirror address
       var newAddress = (address - 0x2000) % 0x1000;
       var mirrorAddr = 0x2000 +
           mirrorLookup[mirror][newAddress ~/ 0x0400] * 0x0400 +
           (newAddress % 0x0400);
       nameTableData[mirrorAddr % 2048] = value & 0xFF;
-    }
-    if (address < 0x4000) {
+    } else if (address < 0x4000) {
       var paletteAddress = address % 32;
       paletteData[(paletteAddress >= 16 && paletteAddress % 4 == 0)
           ? paletteAddress - 16
           : paletteAddress] = value;
+    } else {
+      throw Exception("unhandled ppu memory write at address: $address");
     }
-    throw Exception("unhandled ppu memory write at address: $address");
   }
 
   writeMask(int value) {

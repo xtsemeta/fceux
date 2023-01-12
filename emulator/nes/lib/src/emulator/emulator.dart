@@ -40,6 +40,8 @@ class Emulator {
 
   void start(Uint8List romBytes) {
     isRunning = true;
+    cartridgeData = Uint8List(romBytes.length);
+    cartridgeData = romBytes;
     loadGame(cartridgeData);
 
     Timer.periodic(const Duration(milliseconds: 16), (timer) {
@@ -58,6 +60,9 @@ class Emulator {
       startTime = currentTimeMs();
       while (isRunning) {
         totalCycles += console.step();
+
+        _onFrameChanedController.add(Uint8List.fromList(console.videoBuffer()));
+        break;
       }
     } catch (error, stackTrace) {
       log('Timer canceled: $error');

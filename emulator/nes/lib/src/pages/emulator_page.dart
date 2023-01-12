@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:isolate';
 import 'dart:ui' as ui;
 
@@ -24,11 +25,12 @@ class _EmulatorPageWidgetState extends State<EmulatorPageWidget> {
 
     controller = _EmulatorController();
     Future.delayed(Duration.zero, () {
-      rootBundle.loadString('./roms/nestest.log').then((log) => {
-            rootBundle.load('./roms/nestest.nes').then((rom) => () {
-                  controller.initialize(rom.buffer.asUint8List(), log);
-                })
-          });
+      rootBundle.loadString('./assets/nestest.log').then((data) {
+        log('log: $data');
+        rootBundle.load('./assets/nestest.nes').then((rom) {
+          controller.initialize(rom.buffer.asUint8List(), data);
+        });
+      });
     });
   }
 
@@ -75,6 +77,7 @@ class _EmulatorController extends ChangeNotifier {
           _onReceiveInitialize(message.data);
           break;
         case EmulatorMessageOutType.updateFrame:
+          _onReceiveFrameUpdate(message.data);
           break;
         default:
       }
@@ -82,6 +85,7 @@ class _EmulatorController extends ChangeNotifier {
   }
 
   void _onReceiveInitialize(SendPort emulatorSendPort) {
+    log('on receive initialize');
     this.emulatorSendPort = emulatorSendPort;
 
     if (debugLog.isNotEmpty) {
@@ -94,6 +98,7 @@ class _EmulatorController extends ChangeNotifier {
   }
 
   void _onReceiveFrameUpdate(Uint8List framePixels) {
+    log('on receive fame update');
     _convertFrameToImage(framePixels).then((ui.Image image) {
       currentFrame = image;
       notifyListeners();

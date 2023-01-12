@@ -5,7 +5,10 @@ import 'package:nes/src/isolates/messages/emulator_messages.dart';
 
 import '../emulator/emulator.dart';
 
-void emulatorIsolateMain(SendPort sendPort) {}
+void emulatorIsolateMain(SendPort sendPort) {
+  final emulatorIsolate = EmulatorIsolate(sendPort, ReceivePort());
+  emulatorIsolate.main();
+}
 
 class EmulatorIsolate {
   final SendPort sendPort; //parent

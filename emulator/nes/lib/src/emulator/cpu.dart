@@ -97,32 +97,27 @@ class CPU {
   void write(int address, int value /* Byte */) {
     if (address < 0x2000) {
       ram[address % 0x0800] = value;
-    }
-    if (address < 0x4000) {
+    } else if (address < 0x4000) {
       ppu.writeRegister(0x2000 + address % 8, value);
-    }
-    if (address < 0x4014) {
+    } else if (address < 0x4014) {
       apu.writeRegister(address, value);
-    }
-    if (address == 0x4014) {
+    } else if (address == 0x4014) {
       ppu.writeRegister(address, value);
-    }
-    if (address == 0x4015) {
+    } else if (address == 0x4015) {
       apu.writeRegister(address, value);
-    }
-    if (address == 0x4016) {
+    } else if (address == 0x4016) {
       controller1.write(value);
       controller2.write(value);
-    }
-    if (address == 0x4017) {
+    } else if (address == 0x4017) {
       apu.writeRegister(address, value);
     }
     //address < 0x6000 ->
     // TODO: I/O registers
-    if (address >= 0x6000) {
+    else if (address >= 0x6000) {
       mapper.write(address, value);
+    } else {
+      throw Exception("unhandled cpu memory write at address: $address");
     }
-    throw Exception("unhandled cpu memory write at address: $address");
   }
 
   double step() {

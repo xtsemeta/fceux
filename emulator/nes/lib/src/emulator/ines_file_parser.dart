@@ -1,4 +1,4 @@
-import 'dart:ffi';
+import 'dart:developer';
 
 import 'package:flutter/services.dart';
 import 'cartridge.dart';
@@ -8,18 +8,18 @@ import 'byte_array_input_stream.dart';
 
 class INesFileParser {
   /// "NES\x1a".codeUnits
-  static const inesFileMagic = [0xe4, 0x45, 0x53, 0x1a];
+  static const inesFileMagic = [0x4e, 0x45, 0x53, 0x1a];
   static const padding = [0, 0, 0, 0, 0, 0, 0];
 
   static INesFileHeader? parseFileHeader(ByteArrayInputStream stream) {
     return INesFileHeader(
-        Uint8List.fromList(List.generate(4, (index) => stream.read())),
-        stream.read() as Uint8,
-        stream.read() as Uint8,
-        stream.read() as Uint8,
-        stream.read() as Uint8,
-        stream.read() as Uint8,
-        Uint8List.fromList(List.generate(7, (index) => stream.read())));
+        List.generate(4, (index) => stream.read()),
+        stream.read(),
+        stream.read(),
+        stream.read(),
+        stream.read(),
+        stream.read(),
+        List.generate(7, (index) => stream.read()));
   }
 
   static Cartridge parseCartridge(ByteArrayInputStream stream) {
@@ -29,9 +29,9 @@ class INesFileParser {
     }
 
     // mapper state reference type
-    int control1 = (inesFileHeader.control1 as int).toInt();
+    int control1 = (inesFileHeader.control1).toInt();
     var mapper1 = control1 >> 4;
-    var mapper2 = (inesFileHeader.control2 as int) >> 4;
+    var mapper2 = (inesFileHeader.control2) >> 4;
     var mapper = mapper1 | (mapper2 << 4);
 
     // mirror type
@@ -43,12 +43,12 @@ class INesFileParser {
     var battery = (control1 >> 1) & 0x1;
 
     // read prg-rom bank(s)
-    var prg = Uint8List((inesFileHeader.numPRG as int) * 0x4000); //16384
+    var prg = Uint8List((inesFileHeader.numPRG) * 0x4000); //16384
     if (stream.read(b: prg) != prg.length) {
-      print('Could not load ${prg.length} bytes from the input');
+      log('Could not load ${prg.length} bytes from the input');
     }
     // read chr-rom bank(s)
-    var numCHR = inesFileHeader.numCHR as int;
+    var numCHR = inesFileHeader.numCHR;
     var chr = Uint8List(numCHR * 0x2000); //8192
     stream.read(b: chr);
 
